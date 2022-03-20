@@ -38,7 +38,7 @@ namespace SoccerStatAuthenticationServer.Repository.UserRepository
 
         public async Task<User> GetByEmail(string email)
         {
-            User user = await context.Users.Where(u => u.Email == email).FirstAsync();
+            User user = await context.Users.Where(u => u.Email == email).FirstOrDefaultAsync();
             return user;
         }
 

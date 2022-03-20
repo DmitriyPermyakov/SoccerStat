@@ -11,6 +11,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SoccerStatAuthenticationServer.Repository;
+using Microsoft.EntityFrameworkCore;
+using SoccerStatAuthenticationServer.Repository.UserRepository;
+using SoccerStatAuthenticationServer.Repository.TokenRepository;
 
 namespace SoccerStatAuthenticationServer
 {
@@ -22,12 +26,19 @@ namespace SoccerStatAuthenticationServer
         }
 
         public IConfiguration Configuration { get; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
+        
         public void ConfigureServices(IServiceCollection services)
         {
 
             services.AddControllers();
+
+            string connectionString = Configuration.GetConnectionString("AuthenticationDatabase");
+
+            services.AddDbContext<AuthenticationServerDbContext>(options => options.UseSqlServer(connectionString));
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<ITokenRepository, TokenRepository>();
+
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SoccerStatAuthenticationServer", Version = "v1" });
