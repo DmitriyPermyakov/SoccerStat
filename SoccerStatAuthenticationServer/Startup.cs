@@ -11,21 +11,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
 using SoccerStatAuthenticationServer.Repository;
 using Microsoft.EntityFrameworkCore;
 using SoccerStatAuthenticationServer.Repository.UserRepository;
 using SoccerStatAuthenticationServer.Repository.TokenRepository;
+using SoccerStatAuthenticationServer.AuthenticationSettings;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace SoccerStatAuthenticationServer
 {
     public class Startup
     {
+        public IConfiguration Configuration { get; }
+        private readonly string localhostConnection = "localhostConnection";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
         
         public void ConfigureServices(IServiceCollection services)
         {
@@ -34,15 +40,69 @@ namespace SoccerStatAuthenticationServer
 
             string connectionString = Configuration.GetConnectionString("AuthenticationDatabase");
 
+            JwtSettings jwtSettings = new JwtSettings();
+            Configuration.Bind("JwtSettings", jwtSettings);
+            services.AddSingleton(jwtSettings);
+
             services.AddDbContext<AuthenticationServerDbContext>(options => options.UseSqlServer(connectionString));
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<ITokenRepository, TokenRepository>();
 
 
+            TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RequireExpirationTime = true,
+                ValidateLifetime = true,
+
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.AccessTokenSecret))
+            };
+
+            services.AddSingleton(tokenValidationParameters);
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true;
+                    options.TokenValidationParameters = tokenValidationParameters;
+                });
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: localhostConnection, builder => builder.WithOrigins("http://localhost:3000")
+                    .AllowAnyHeader()
+                    .WithMethods("PUT", "POST", "GET", "DELETE"));
+            });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SoccerStatAuthenticationServer", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please enter into fiels the word 'Bearer' following by space and JWT",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,11 +119,13 @@ namespace SoccerStatAuthenticationServer
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+            app.UseCors(localhostConnection);
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
+                endpoints.MapControllers().RequireCors(localhostConnection);
             });
         }
     }
