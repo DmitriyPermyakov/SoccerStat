@@ -1,4 +1,4 @@
-﻿using SoccerStatAuthenticationServer.DTOs.DomainObjects;
+﻿using SoccerStatAuthenticationServer.DomainObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,12 +8,12 @@ namespace SoccerStatAuthenticationServer.Repository.UserRepository
 {
     public interface IUserRepository
     {
-        public Task<List<User>> GetAll();
-        public Task<User> GetById(int id);
-        public Task<User> GetByEmail(string Email);
-        public Task<User> Create(User user);
-        public Task<User> Update(User user);
-        public Task<string> Delete(User user);
+        public Task<List<User>> GetAllAsync();
+        public Task<User> GetByIdAsync(int id);
+        public Task<User> GetByEmailAsync(string Email);
+        public Task<User> CreateAsync(User user);
+        public Task<User> UpdateAsync(User user);
+        public Task<string> DeleteAsync(User user);
 
     }
 }

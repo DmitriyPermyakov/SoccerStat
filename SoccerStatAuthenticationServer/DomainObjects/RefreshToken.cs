@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SoccerStatAuthenticationServer.DTOs.DomainObjects
+namespace SoccerStatAuthenticationServer.DomainObjects
 {
     public class RefreshToken
     {

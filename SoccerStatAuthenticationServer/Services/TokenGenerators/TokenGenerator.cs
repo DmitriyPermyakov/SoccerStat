@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SoccerStatAuthenticationServer.Services
+namespace SoccerStatAuthenticationServer.Services.TokenGenerators
 {
-    public interface ITokenGenerator
+    public class TokenGenerator : ITokenGenerator
     {
     }
 }
