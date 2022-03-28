@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using SoccerStatAuthenticationServer.DTOs.DomainObjects;
+using SoccerStatAuthenticationServer.DomainObjects;
 using SoccerStatAuthenticationServer.Repository.TokenRepository;
 
 namespace SoccerStatAuthenticationServer.Repository.TokenRepository
@@ -15,20 +15,20 @@ namespace SoccerStatAuthenticationServer.Repository.TokenRepository
         {
             context = ctx;
         }
-        public async Task<RefreshToken> Create(RefreshToken refreshToken)
+        public async Task<RefreshToken> CreateAsync(RefreshToken refreshToken)
         {
             var createdRefreshToken = await context.RefreshTokens.AddAsync(refreshToken);
             _ = await context.SaveChangesAsync();
             return createdRefreshToken.Entity;
         }
 
-        public async Task<RefreshToken> GetById(int id)
+        public async Task<RefreshToken> GetByIdAsync(int id)
         {
             RefreshToken token = await context.RefreshTokens.FindAsync(id);
             return token;
         }
 
-        public async Task<RefreshToken> GetByToken(RefreshToken refreshToken)
+        public async Task<RefreshToken> GetByTokenAsync(RefreshToken refreshToken)
         {
             RefreshToken token = await context.RefreshTokens.Where(t => t.Token == refreshToken.Token).FirstOrDefaultAsync();
             return token;

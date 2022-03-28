@@ -1,4 +1,4 @@
-﻿using SoccerStatAuthenticationServer.DTOs.DomainObjects;
+﻿using SoccerStatAuthenticationServer.DomainObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +8,8 @@ namespace SoccerStatAuthenticationServer.Repository.TokenRepository
 {
     public interface ITokenRepository
     {
-        public Task<RefreshToken> Create(RefreshToken refreshToken);
-        public Task<RefreshToken> GetById(int id);
-        public Task<RefreshToken> GetByToken(RefreshToken refreshToken);
+        public Task<RefreshToken> CreateAsync(RefreshToken refreshToken);
+        public Task<RefreshToken> GetByIdAsync(int id);
+        public Task<RefreshToken> GetByTokenAsync(RefreshToken refreshToken);
     }
 }

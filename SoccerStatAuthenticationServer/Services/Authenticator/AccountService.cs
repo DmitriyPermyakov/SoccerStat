@@ -10,20 +10,29 @@ using SoccerStatAuthenticationServer.Exceptions;
 using SoccerStatAuthenticationServer.DomainObjects;
 using SoccerStatAuthenticationServer.Services.TokenGenerators;
 using SoccerStatAuthenticationServer.Services.PasswordHasher;
+using SoccerStatAuthenticationServer.AuthenticationSettings;
 
 namespace SoccerStatAuthenticationServer.Services.Authenticator
 {
     public class AccountService : IAccountService
     {
         private IUserRepository userRepository;
+        private ITokenRepository tokenRepository;
         private ITokenGenerator tokenGenerator;
         private IPasswordHasher passwordHasher;
+        private JwtSettings jwtSettings;
 
-        public AccountService(IUserRepository userRepository, ITokenGenerator tokenGenerator, IPasswordHasher passwordHasher)
+        public AccountService(IUserRepository userRepository,
+            ITokenRepository tokenRepository,
+            ITokenGenerator tokenGenerator,
+            IPasswordHasher passwordHasher,
+            JwtSettings jwtSettings)
         {
             this.userRepository = userRepository;
             this.tokenGenerator = tokenGenerator;
             this.passwordHasher = passwordHasher;
+            this.jwtSettings = jwtSettings;
+            this.tokenRepository = tokenRepository;
         }
 
         public async Task<AuthenticationResult> Register(RegisterRequest registerRequest)
@@ -32,9 +41,39 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             if (user != null)
                 throw new UserExistsException("User already exists");
 
+            string passwordHash = passwordHasher.HashPassword(registerRequest.Password);
+            User userToCreate = new()
+            {
+                Id = Guid.NewGuid(),
+                Email = registerRequest.Email,
+                PasswordHash = passwordHash
+            };
 
+            User createdUser = await userRepository.CreateAsync(userToCreate);
 
-                
+            string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken);
+            string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
+
+            RefreshToken createdRefreshToken = new RefreshToken()
+            {
+                Id = Guid.NewGuid(),
+                Token = refreshToken,
+                CreationDate = DateTime.UtcNow,
+                ExpirationDate = DateTime.UtcNow.AddMinutes(jwtSettings.RefreshTokenExpirationMinutes),
+                Invalidated = false,
+                Used = false,
+                User = createdUser
+            };
+
+            _ = await tokenRepository.CreateAsync(createdRefreshToken);
+
+            AuthenticationResult result = new AuthenticationResult()
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            };
+
+            return result;
         }
         public async Task<AuthenticationResult> Login(LoginRequest loginRequest)
         {

@@ -7,9 +7,9 @@ namespace SoccerStatAuthenticationServer.DomainObjects
 {
     public class User
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }        
-        public RefreshToken RefreshToken { get; set; }
+        public List<RefreshToken> RefreshTokens { get; set; }
     }
 }
