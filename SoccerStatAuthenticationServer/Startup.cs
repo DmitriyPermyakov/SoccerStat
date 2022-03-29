@@ -19,6 +19,9 @@ using SoccerStatAuthenticationServer.Repository.TokenRepository;
 using SoccerStatAuthenticationServer.AuthenticationSettings;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using SoccerStatAuthenticationServer.Services.TokenGenerators;
+using SoccerStatAuthenticationServer.Services.PasswordHasher;
+using SoccerStatAuthenticationServer.Services.Authenticator;
 
 namespace SoccerStatAuthenticationServer
 {
@@ -47,6 +50,9 @@ namespace SoccerStatAuthenticationServer
             services.AddDbContext<AuthenticationServerDbContext>(options => options.UseSqlServer(connectionString));
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<ITokenRepository, TokenRepository>();
+            services.AddTransient<ITokenGenerator, TokenGenerator>();
+            services.AddTransient<IPasswordHasher, PasswordHasher>();
+            services.AddTransient<IAccountService, AccountService>();
 
 
             TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
