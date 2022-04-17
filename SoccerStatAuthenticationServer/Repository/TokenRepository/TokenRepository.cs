@@ -28,9 +28,15 @@ namespace SoccerStatAuthenticationServer.Repository.TokenRepository
             return token;
         }
 
-        public async Task<RefreshToken> GetByTokenAsync(RefreshToken refreshToken)
+        public async Task<RefreshToken> GetByTokenAsync(string refreshToken)
         {
-            RefreshToken token = await context.RefreshTokens.Where(t => t.Token == refreshToken.Token).FirstOrDefaultAsync();
+            RefreshToken token = await context.RefreshTokens.Where(t => t.Token == refreshToken).FirstOrDefaultAsync();
+            return token;
+        }
+
+        public async Task<RefreshToken> GetByUserIdAsync(Guid userId)
+        {
+            RefreshToken token = await context.RefreshTokens.Where(t => t.UserId == userId).FirstOrDefaultAsync();
             return token;
         }
     }

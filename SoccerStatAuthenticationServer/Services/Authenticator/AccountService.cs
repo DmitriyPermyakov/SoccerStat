@@ -11,6 +11,10 @@ using SoccerStatAuthenticationServer.DomainObjects;
 using SoccerStatAuthenticationServer.Services.TokenGenerators;
 using SoccerStatAuthenticationServer.Services.PasswordHasher;
 using SoccerStatAuthenticationServer.AuthenticationSettings;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using SoccerStatAuthenticationServer.Services.ValidationParameters;
 
 namespace SoccerStatAuthenticationServer.Services.Authenticator
 {
@@ -20,19 +24,19 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
         private ITokenRepository tokenRepository;
         private ITokenGenerator tokenGenerator;
         private IPasswordHasher passwordHasher;
-        private JwtSettings jwtSettings;
+        private JwtSettings jwtSettings;        
 
         public AccountService(IUserRepository userRepository,
             ITokenRepository tokenRepository,
             ITokenGenerator tokenGenerator,
             IPasswordHasher passwordHasher,
-            JwtSettings jwtSettings)
+            JwtSettings jwtSettings)            
         {
             this.userRepository = userRepository;
             this.tokenGenerator = tokenGenerator;
             this.passwordHasher = passwordHasher;
             this.jwtSettings = jwtSettings;
-            this.tokenRepository = tokenRepository;
+            this.tokenRepository = tokenRepository;            
         }
 
         public async Task<AuthenticationResult> Register(RegisterRequest registerRequest)
@@ -77,13 +81,69 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
         }
         public async Task<AuthenticationResult> Login(LoginRequest loginRequest)
         {
-            throw new NotImplementedException();
+            User user = await userRepository.GetByEmailAsync(loginRequest.Email);
+            if (user == null)
+                throw new AuthenticationException("Invalid user/password");
+
+            bool isPasswordCorrect = passwordHasher.VerifyPassword(loginRequest.Password, user.PasswordHash);
+            if (!isPasswordCorrect)
+                throw new AuthenticationException("Invalid user/password");
+
+            string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
+            RefreshToken refreshToken = await tokenRepository.GetByUserIdAsync(user.Id);
+            string refreshTokenValue = refreshToken.Token;            
+
+            AuthenticationResult authResult = new()
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshTokenValue
+            };
+
+            return authResult;
         }
 
         public async Task<AuthenticationResult> RefreshToken(RefreshTokenRequest refreshTokenRequest)
         {
-            throw new NotImplementedException();
+            var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken validatedAccessToken = null;
+            SecurityToken validatedRefreshToken = null;
+
+            ValidationParametersFactory validationFactory = new ValidationParametersFactory(jwtSettings);
+
+            TokenValidationParameters accessTokenValidationParameters = validationFactory.AccessTokenValidationParameters;
+            TokenValidationParameters refreshTokenValidationParameters = validationFactory.RefreshTokenValidationParameters;
+
+            validatedAccessToken = tokenGenerator.ValidateToken(refreshTokenRequest.AccessToken, accessTokenValidationParameters);
+            validatedRefreshToken = tokenGenerator.ValidateToken(refreshTokenRequest.RefreshToken, refreshTokenValidationParameters);
+
+            if (validatedAccessToken == null || validatedRefreshToken == null)
+                throw new AuthenticationException("Invalid token");
+
+            Console.WriteLine(validatedAccessToken.ValidTo);
+            Console.WriteLine(DateTime.UtcNow);
+
+            if(validatedAccessToken.ValidTo < DateTime.UtcNow)
+            {
+                throw new AccessTokenValidationTimeException("Access token is valid yet");
+            }            
+
+            RefreshToken refreshToken = await tokenRepository.GetByTokenAsync(refreshTokenRequest.RefreshToken);
+            if (refreshToken == null || refreshToken.Used || refreshToken.Invalidated || refreshToken.CreationDate < DateTime.UtcNow)
+                throw new RefreshTokenException("Refresh token is invalid");
+
+            // invalidated will be used then user change password or login again                   
+
+            string newAccessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
+
+
+            return new AuthenticationResult()
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = refreshTokenRequest.RefreshToken
+            };
+
         }
 
+        
     }
 }

@@ -40,6 +40,38 @@ namespace SoccerStatAuthenticationServer.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequest loginRequest)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(loginRequest);
+
+            AuthenticationResult result;
+            try
+            {
+                result = await accountService.Login(loginRequest);
+            }
+            catch(AuthenticationException)
+            {
+                return BadRequest(loginRequest);
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("refreshToken")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenRequest refreshTokenRequest)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(refreshTokenRequest);
+
+            _ = await accountService.RefreshToken(refreshTokenRequest);
+
+            
+            
+            return Ok();
+        }
         
     }
 }

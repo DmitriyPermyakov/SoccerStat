@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SoccerStatAuthenticationServer.Services.TokenGenerators;
 using SoccerStatAuthenticationServer.Services.PasswordHasher;
 using SoccerStatAuthenticationServer.Services.Authenticator;
+using SoccerStatAuthenticationServer.Services.ValidationParameters;
 
 namespace SoccerStatAuthenticationServer
 {
@@ -54,26 +55,14 @@ namespace SoccerStatAuthenticationServer
             services.AddTransient<IPasswordHasher, PasswordHasher>();
             services.AddTransient<IAccountService, AccountService>();
 
-
-            TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidateIssuerSigningKey = true,
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                RequireExpirationTime = true,
-                ValidateLifetime = true,
-
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.AccessTokenSecret))
-            };
-
-            services.AddSingleton(tokenValidationParameters);
+            TokenValidationParameters accessTokenValidationParameters = new ValidationParametersFactory(jwtSettings).AccessTokenValidationParameters;
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
                     options.RequireHttpsMetadata = false;
                     options.SaveToken = true;
-                    options.TokenValidationParameters = tokenValidationParameters;
+                    options.TokenValidationParameters = accessTokenValidationParameters;
                 });
             services.AddCors(options =>
             {

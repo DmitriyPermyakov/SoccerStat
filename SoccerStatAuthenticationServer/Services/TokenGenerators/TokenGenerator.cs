@@ -47,20 +47,36 @@ namespace SoccerStatAuthenticationServer.Services.TokenGenerators
 
             //List<Claim> claims = new List<Claim>()
             //{
-            //    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            //    new Claim(JwtRegisteredClaimNames.Email,  ),
             //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             //};
 
             JwtSecurityToken token = new JwtSecurityToken(
                 issuer: jwtSettings.Issuer,
-                audience: jwtSettings.Audience,    
+                audience: jwtSettings.Audience,                
                 claims: null,
                 notBefore: DateTime.UtcNow,
-                expires: DateTime.UtcNow.AddMinutes(expirationTime),
+                expires: DateTime.UtcNow.AddMinutes(expirationTime),                
                 signingCredentials);
 
             var createdToken = new JwtSecurityTokenHandler().WriteToken(token);
             return createdToken;
+        }
+
+        public SecurityToken ValidateToken(string token, TokenValidationParameters tokenValidationParameters)
+        {
+            var tokenSecurityHandler = new JwtSecurityTokenHandler();
+            SecurityToken validatedToken;
+            try
+            {
+               ClaimsPrincipal claims = tokenSecurityHandler.ValidateToken(token, tokenValidationParameters, out validatedToken);
+            }
+            catch
+            {
+                validatedToken = null;
+            }
+
+            return validatedToken;
         }
     }
 }
