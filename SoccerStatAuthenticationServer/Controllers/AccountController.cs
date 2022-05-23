@@ -9,6 +9,8 @@ using SoccerStatAuthenticationServer.DTOs.Requests;
 using SoccerStatAuthenticationServer.DTOs.Responses;
 using SoccerStatAuthenticationServer.Services.Authenticator;
 using SoccerStatAuthenticationServer.Exceptions;
+using Microsoft.AspNetCore.Authorization;
+using SoccerStatAuthenticationServer.DomainObjects;
 
 namespace SoccerStatAuthenticationServer.Controllers
 {
@@ -27,18 +29,17 @@ namespace SoccerStatAuthenticationServer.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(registerRequest);
-
-            AuthenticationResult result;
+                        
             try
             {
-                result = await accountService.Register(registerRequest);
+               _ = await accountService.Register(registerRequest);
             }
             catch(UserExistsException)
             {
                 return BadRequest(registerRequest);
             }
 
-            return Ok(result);
+            return Ok();
         }
 
         [HttpPost("login")]
@@ -54,7 +55,7 @@ namespace SoccerStatAuthenticationServer.Controllers
             }
             catch(AuthenticationException)
             {
-                return BadRequest(loginRequest);
+                return Unauthorized(loginRequest);
             }
 
             return Ok(result);
@@ -66,11 +67,48 @@ namespace SoccerStatAuthenticationServer.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(refreshTokenRequest);
 
-            _ = await accountService.RefreshToken(refreshTokenRequest);
+            AuthenticationResult result = null;
+            try
+            {
+                result  = await accountService.RefreshToken(refreshTokenRequest);
+            }
+            catch(AccessTokenValidationTimeException)
+            {
+                return Ok(refreshTokenRequest);
+            }
+            catch(RefreshTokenException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+                     
+            
+            return Ok(result);
+        }
 
-            
-            
-            return Ok();
+        [Authorize]
+        [HttpDelete("logout")]
+        public async Task<IActionResult> Logout(RefreshTokenRequest refreshTokenRequest)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(refreshTokenRequest);
+
+            Microsoft.EntityFrameworkCore.EntityState state;
+            try
+            {
+                state = await accountService.Logout(refreshTokenRequest);
+            }
+            catch(RefreshTokenException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            if (state == Microsoft.EntityFrameworkCore.EntityState.Deleted)
+            {                
+                return Ok(state);
+            }
+
+            return BadRequest();
+
         }
         
     }

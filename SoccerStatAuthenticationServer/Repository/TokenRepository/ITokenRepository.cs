@@ -8,9 +8,9 @@ namespace SoccerStatAuthenticationServer.Repository.TokenRepository
 {
     public interface ITokenRepository
     {
-        public Task<RefreshToken> CreateAsync(RefreshToken refreshToken);
-        public Task<RefreshToken> GetByIdAsync(int id);
+        public Task<RefreshToken> CreateAsync(RefreshToken refreshToken);       
         public Task<RefreshToken> GetByTokenAsync(string refreshToken);
         public Task<RefreshToken> GetByUserIdAsync(Guid userId);
+        public Task<Microsoft.EntityFrameworkCore.EntityState> RemoveToken(RefreshToken refreshToken);
     }
 }

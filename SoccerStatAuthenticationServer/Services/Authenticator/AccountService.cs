@@ -1,8 +1,6 @@
 ﻿using SoccerStatAuthenticationServer.DTOs.Requests;
 using SoccerStatAuthenticationServer.DTOs.Responses;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using SoccerStatAuthenticationServer.Repository.UserRepository;
 using SoccerStatAuthenticationServer.Repository.TokenRepository;
@@ -39,7 +37,7 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             this.tokenRepository = tokenRepository;            
         }
 
-        public async Task<AuthenticationResult> Register(RegisterRequest registerRequest)
+        public async Task<User> Register(RegisterRequest registerRequest)
         {
             User user = await userRepository.GetByEmailAsync(registerRequest.Email);
             if (user != null)
@@ -54,30 +52,9 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             };
 
             User createdUser = await userRepository.CreateAsync(userToCreate);
+            
 
-            string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken);
-            string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
-
-            RefreshToken createdRefreshToken = new RefreshToken()
-            {
-                Id = Guid.NewGuid(),
-                Token = refreshToken,
-                CreationDate = DateTime.UtcNow,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(jwtSettings.RefreshTokenExpirationMinutes),
-                Invalidated = false,
-                Used = false,
-                User = createdUser
-            };
-
-            _ = await tokenRepository.CreateAsync(createdRefreshToken);
-
-            AuthenticationResult result = new AuthenticationResult()
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            };
-
-            return result;
+            return createdUser;
         }
         public async Task<AuthenticationResult> Login(LoginRequest loginRequest)
         {
@@ -89,14 +66,33 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             if (!isPasswordCorrect)
                 throw new AuthenticationException("Invalid user/password");
 
+            RefreshToken oldRefreshToken = await tokenRepository.GetByUserIdAsync(user.Id);
+
+            if(oldRefreshToken != null)
+            {
+                _ = await tokenRepository.RemoveToken(oldRefreshToken);
+            }
+
             string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
-            RefreshToken refreshToken = await tokenRepository.GetByUserIdAsync(user.Id);
-            string refreshTokenValue = refreshToken.Token;            
+            string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken);
+
+            RefreshToken createdRefreshToken = new RefreshToken()
+            {
+                Id = Guid.NewGuid(),
+                Token = refreshToken,
+                CreationDate = DateTime.UtcNow,
+                ExpirationDate = DateTime.UtcNow.AddMinutes(jwtSettings.RefreshTokenExpirationMinutes),
+                Invalidated = false,
+                Used = false,
+                User = user
+            };
+
+            _ = await tokenRepository.CreateAsync(createdRefreshToken);                   
 
             AuthenticationResult authResult = new()
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshTokenValue
+                RefreshToken = refreshToken
             };
 
             return authResult;
@@ -117,31 +113,37 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             validatedRefreshToken = tokenGenerator.ValidateToken(refreshTokenRequest.RefreshToken, refreshTokenValidationParameters);
 
             if (validatedAccessToken == null || validatedRefreshToken == null)
-                throw new AuthenticationException("Invalid token");
+                throw new AuthenticationException("Invalid token");            
 
-            Console.WriteLine(validatedAccessToken.ValidTo);
-            Console.WriteLine(DateTime.UtcNow);
-
-            if(validatedAccessToken.ValidTo < DateTime.UtcNow)
+            if(validatedAccessToken.ValidTo > DateTime.UtcNow)
             {
                 throw new AccessTokenValidationTimeException("Access token is valid yet");
             }            
 
             RefreshToken refreshToken = await tokenRepository.GetByTokenAsync(refreshTokenRequest.RefreshToken);
-            if (refreshToken == null || refreshToken.Used || refreshToken.Invalidated || refreshToken.CreationDate < DateTime.UtcNow)
+            if (refreshToken == null || refreshToken.Used || refreshToken.Invalidated || validatedRefreshToken.ValidTo < DateTime.UtcNow)
                 throw new RefreshTokenException("Refresh token is invalid");
 
-            // invalidated will be used then user change password or login again                   
+            _ = await tokenRepository.RemoveToken(refreshToken);
 
+            string newRefreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken);
             string newAccessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
-
 
             return new AuthenticationResult()
             {
                 AccessToken = newAccessToken,
-                RefreshToken = refreshTokenRequest.RefreshToken
+                RefreshToken = newRefreshToken
             };
+        }
 
+        public async Task<Microsoft.EntityFrameworkCore.EntityState> Logout(RefreshTokenRequest refreshTokenRequest)
+        {
+            RefreshToken refreshToken = await tokenRepository.GetByTokenAsync(refreshTokenRequest.RefreshToken);
+            if (refreshToken == null)
+                throw new RefreshTokenException("Token not found");
+
+            var result = await tokenRepository.RemoveToken(refreshToken);
+            return result;
         }
 
         
