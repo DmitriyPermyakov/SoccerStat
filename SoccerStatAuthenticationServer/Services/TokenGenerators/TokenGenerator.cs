@@ -25,7 +25,7 @@ namespace SoccerStatAuthenticationServer.Services.TokenGenerators
             this.jwtSettings = jwtSettings;
         }
 
-        public string GenerateToken(TokenType tokenType)
+        public string GenerateToken(TokenType tokenType, User user)
         {
             string tokenSecret = null;
             double expirationTime = 0;
@@ -45,16 +45,21 @@ namespace SoccerStatAuthenticationServer.Services.TokenGenerators
             SigningCredentials signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
 
-            //List<Claim> claims = new List<Claim>()
-            //{
-            //    new Claim(JwtRegisteredClaimNames.Email,  ),
-            //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            //};
+            List<Claim> claims = new List<Claim>()
+            {
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())
+            };
+
+            foreach(var role in user.Roles)
+            {
+                claims.Add(new Claim("role", role.ToString()));
+            }
 
             JwtSecurityToken token = new JwtSecurityToken(
                 issuer: jwtSettings.Issuer,
                 audience: jwtSettings.Audience,                
-                claims: null,
+                claims: claims,
                 notBefore: DateTime.UtcNow,
                 expires: DateTime.UtcNow.AddMinutes(expirationTime),                
                 signingCredentials);

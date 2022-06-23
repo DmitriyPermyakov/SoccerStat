@@ -42,7 +42,7 @@ namespace SoccerStatAuthenticationServer.Repository.UserRepository
             return user;
         }
 
-        public async Task<User> GetByIdAsync(int id)
+        public async Task<User> GetByIdAsync(Guid id)
         {
             User user = await context.Users.FindAsync(id);
             return user;

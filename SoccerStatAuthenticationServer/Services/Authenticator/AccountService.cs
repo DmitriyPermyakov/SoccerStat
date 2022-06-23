@@ -39,45 +39,49 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             this.tokenRepository = tokenRepository;            
         }
 
-        public async Task<AuthenticationResult> Register(RegisterRequest registerRequest)
+        public async Task<User> Register(RegisterRequest registerRequest)
         {
             User user = await userRepository.GetByEmailAsync(registerRequest.Email);
             if (user != null)
                 throw new UserExistsException("User already exists");
 
             string passwordHash = passwordHasher.HashPassword(registerRequest.Password);
+            ICollection<Role> roles = new List<Role>() { Role.User };
             User userToCreate = new()
             {
                 Id = Guid.NewGuid(),
                 Email = registerRequest.Email,
-                PasswordHash = passwordHash
+                PasswordHash = passwordHash,
+                Roles = roles
             };
 
             User createdUser = await userRepository.CreateAsync(userToCreate);
 
-            string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken);
-            string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
+            #region
+            //string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken, createdUser);
+            //string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken, createdUser);
 
-            RefreshToken createdRefreshToken = new RefreshToken()
-            {
-                Id = Guid.NewGuid(),
-                Token = refreshToken,
-                CreationDate = DateTime.UtcNow,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(jwtSettings.RefreshTokenExpirationMinutes),
-                Invalidated = false,
-                Used = false,
-                User = createdUser
-            };
+            //RefreshToken createdRefreshToken = new RefreshToken()
+            //{
+            //    Id = Guid.NewGuid(),
+            //    Token = refreshToken,
+            //    CreationDate = DateTime.UtcNow,
+            //    ExpirationDate = DateTime.UtcNow.AddMinutes(jwtSettings.RefreshTokenExpirationMinutes),
+            //    Invalidated = false,
+            //    Used = false,
+            //    User = createdUser
+            //};
 
-            _ = await tokenRepository.CreateAsync(createdRefreshToken);
+            //_ = await tokenRepository.CreateAsync(createdRefreshToken);
 
-            AuthenticationResult result = new AuthenticationResult()
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            };
+            //AuthenticationResult result = new AuthenticationResult()
+            //{
+            //    AccessToken = accessToken,
+            //    RefreshToken = refreshToken
+            //};
+            #endregion
 
-            return result;
+            return createdUser;
         }
         public async Task<AuthenticationResult> Login(LoginRequest loginRequest)
         {
@@ -89,7 +93,7 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             if (!isPasswordCorrect)
                 throw new AuthenticationException("Invalid user/password");
 
-            string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
+            string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken, user);
             RefreshToken refreshToken = await tokenRepository.GetByUserIdAsync(user.Id);
             string refreshTokenValue = refreshToken.Token;            
 
@@ -118,22 +122,21 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
 
             if (validatedAccessToken == null || validatedRefreshToken == null)
                 throw new AuthenticationException("Invalid token");
+                        
 
-            Console.WriteLine(validatedAccessToken.ValidTo);
-            Console.WriteLine(DateTime.UtcNow);
-
-            if(validatedAccessToken.ValidTo < DateTime.UtcNow)
+            if(validatedAccessToken.ValidTo > DateTime.UtcNow)
             {
                 throw new AccessTokenValidationTimeException("Access token is valid yet");
-            }            
+            }
 
             RefreshToken refreshToken = await tokenRepository.GetByTokenAsync(refreshTokenRequest.RefreshToken);
             if (refreshToken == null || refreshToken.Used || refreshToken.Invalidated || refreshToken.CreationDate < DateTime.UtcNow)
                 throw new RefreshTokenException("Refresh token is invalid");
 
             // invalidated will be used then user change password or login again                   
+            var user = await userRepository.GetByIdAsync(refreshToken.UserId);
 
-            string newAccessToken = tokenGenerator.GenerateToken(TokenType.AccessToken);
+            string newAccessToken = tokenGenerator.GenerateToken(TokenType.AccessToken, user);
 
 
             return new AuthenticationResult()
@@ -142,8 +145,6 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
                 RefreshToken = refreshTokenRequest.RefreshToken
             };
 
-        }
-
-        
+        }        
     }
 }

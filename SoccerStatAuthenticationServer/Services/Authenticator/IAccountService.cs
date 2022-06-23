@@ -1,4 +1,5 @@
-﻿using SoccerStatAuthenticationServer.DTOs.Requests;
+﻿using SoccerStatAuthenticationServer.DomainObjects;
+using SoccerStatAuthenticationServer.DTOs.Requests;
 using SoccerStatAuthenticationServer.DTOs.Responses;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
 {
     public interface IAccountService
     {
-        public Task<AuthenticationResult> Register(RegisterRequest registerRequest);
+        public Task<User> Register(RegisterRequest registerRequest);
         public Task<AuthenticationResult> Login(LoginRequest loginRequest);
         public Task<AuthenticationResult> RefreshToken(RefreshTokenRequest refreshTokenRequest);
     }
