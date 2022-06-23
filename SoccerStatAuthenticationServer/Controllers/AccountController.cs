@@ -9,6 +9,7 @@ using SoccerStatAuthenticationServer.DTOs.Requests;
 using SoccerStatAuthenticationServer.DTOs.Responses;
 using SoccerStatAuthenticationServer.Services.Authenticator;
 using SoccerStatAuthenticationServer.Exceptions;
+using SoccerStatAuthenticationServer.DomainObjects;
 
 namespace SoccerStatAuthenticationServer.Controllers
 {
@@ -28,17 +29,17 @@ namespace SoccerStatAuthenticationServer.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(registerRequest);
 
-            AuthenticationResult result;
+            User createdUser;
             try
             {
-                result = await accountService.Register(registerRequest);
+                createdUser = await accountService.Register(registerRequest);
             }
             catch(UserExistsException)
             {
                 return BadRequest(registerRequest);
             }
 
-            return Ok(result);
+            return Ok(createdUser.Id);
         }
 
         [HttpPost("login")]
