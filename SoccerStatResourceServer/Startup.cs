@@ -42,6 +42,8 @@ namespace SoccerStatResourceServer
             Configuration.Bind("JwtSettings", jwtSettings);
             services.AddSingleton(jwtSettings);
 
+            services.AddTransient<ResourceDbContext>();
+
             TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
             {
                 ValidateIssuerSigningKey = true,
