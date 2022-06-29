@@ -9,7 +9,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.OpenApi.Models;
 using SoccerStatResourceServer.AuthenticationSettings;
 using SoccerStatResourceServer.Repository;
 using System;
@@ -17,6 +16,9 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.OpenApi.Models;
+
+
 
 namespace SoccerStatResourceServer
 {
@@ -34,15 +36,16 @@ namespace SoccerStatResourceServer
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             string connectionString = Configuration.GetConnectionString("ResourceDatabase");
-            services.AddDbContext<ResourceDbContext>(options => options.UseSqlServer(connectionString));
+            services.AddDbContext<ResourceDbContext>(options => options.UseLazyLoadingProxies().UseSqlServer(connectionString));
 
             JwtSettings jwtSettings = new JwtSettings();
             Configuration.Bind("JwtSettings", jwtSettings);
             services.AddSingleton(jwtSettings);
 
             services.AddTransient<ResourceDbContext>();
+            services.AddTransient(typeof(IRepository<>), typeof(Repository<>) );
 
             TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
             {

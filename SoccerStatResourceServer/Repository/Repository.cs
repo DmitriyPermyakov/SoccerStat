@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Data;
+
 
 namespace SoccerStatResourceServer.Repository
 {
@@ -14,9 +17,10 @@ namespace SoccerStatResourceServer.Repository
             this.context = context;
             this.dbSet = context.Set<T>();
         }
-        public void Create(T entity)
+        public async Task<T> CreateAsync(T entity)
         {
-            dbSet.Add(entity);
+            var createdEntity = await dbSet.AddAsync(entity);
+            return createdEntity.Entity;
         }
         public void Delete(T entity)
         {
@@ -25,10 +29,10 @@ namespace SoccerStatResourceServer.Repository
 
         public async Task<List<T>> GetAllAsync()
         {
-            return await dbSet.AsNoTracking().ToListAsync();
+            return await dbSet.ToListAsync();
         }
-
-        public async Task<T> GetByIdAsync(Guid id)
+        
+        public async Task<T> GetByIdAsync(string id)
         {
             return await dbSet.FindAsync(id);
         }

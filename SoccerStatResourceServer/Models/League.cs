@@ -6,7 +6,7 @@ namespace SoccerStatResourceServer.Models
     {
         public string Id { get; set; }
         public string Name { get; set; }
-        public List<Team> Teams { get; set; }   
-        public List<Match> Matches { get; set; }
+        public virtual List<Team> Teams { get; set; }   
+        public virtual List<Match> Matches { get; set; }
     }
 }
