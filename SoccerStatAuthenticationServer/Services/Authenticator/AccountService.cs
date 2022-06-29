@@ -94,13 +94,12 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
                 throw new AuthenticationException("Invalid user/password");
 
             string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken, user);
-            RefreshToken refreshToken = await tokenRepository.GetByUserIdAsync(user.Id);
-            string refreshTokenValue = refreshToken.Token;            
+            string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken, user);
 
             AuthenticationResult authResult = new()
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshTokenValue
+                RefreshToken = refreshToken
             };
 
             return authResult;

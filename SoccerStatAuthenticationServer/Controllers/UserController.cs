@@ -10,7 +10,7 @@ using SoccerStatAuthenticationServer.Services.UserService;
 
 namespace SoccerStatAuthenticationServer.Controllers
 {
-    [Route("api/[controller")]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private IUserService userService;
@@ -59,7 +59,7 @@ namespace SoccerStatAuthenticationServer.Controllers
         }
 
         [HttpGet("getbyid/{id:Guid}")]
-        public async Task<IActionResult> GetByIdAsync([FromQuery] Guid id)
+        public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             try
             {
@@ -79,8 +79,8 @@ namespace SoccerStatAuthenticationServer.Controllers
             }
         }
 
-        [HttpGet("getbyemail/{email:string}")]
-        public async Task<IActionResult> GetByEmailAsync([FromQuery] string email)
+        [HttpGet("getbyemail/{email}")]
+        public async Task<IActionResult> GetByEmailAsync(string email)
         {
             try
             {

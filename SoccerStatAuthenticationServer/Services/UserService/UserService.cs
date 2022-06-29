@@ -31,7 +31,7 @@ namespace SoccerStatAuthenticationServer.Services.UserService
             {
                 Id = Guid.NewGuid(),
                 Email = userRequest.Email,
-                PasswordHash = passwordHasher.HashPassword(userRequest.Email),
+                PasswordHash = passwordHasher.HashPassword(userRequest.Password),
                 Roles = userRequest.Roles
             };
 
