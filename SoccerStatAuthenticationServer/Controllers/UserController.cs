@@ -69,7 +69,7 @@ namespace SoccerStatAuthenticationServer.Controllers
                 User user = await userService.GetByIdAsync(id);
                 return Ok(user);
             }
-            catch (UserNotExistsException ex)
+            catch (UserNotExistsException)
             {
                 return NotFound();
             }
@@ -91,7 +91,7 @@ namespace SoccerStatAuthenticationServer.Controllers
 
                 return Ok(user);
             }
-            catch (UserNotExistsException ex)
+            catch (UserNotExistsException)
             {
                 return NotFound();
             }
