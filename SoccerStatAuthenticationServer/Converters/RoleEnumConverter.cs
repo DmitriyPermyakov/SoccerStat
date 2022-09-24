@@ -14,7 +14,8 @@ namespace SoccerStatAuthenticationServer.Converters
             v => JsonConvert.DeserializeObject<ICollection<string>>(v).Select(e => (T)Enum.Parse(typeof(T), e)).ToList())
         { }
 
-        
+
+
     }
 
     public class CollectionValueComparer<T>: ValueComparer<ICollection<T>>

@@ -94,13 +94,12 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
                 throw new AuthenticationException("Invalid user/password");
 
             string accessToken = tokenGenerator.GenerateToken(TokenType.AccessToken, user);
-            RefreshToken refreshToken = await tokenRepository.GetByUserIdAsync(user.Id);
-            string refreshTokenValue = refreshToken.Token;            
+            string refreshToken = tokenGenerator.GenerateToken(TokenType.RefreshToken, user);
 
             AuthenticationResult authResult = new()
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshTokenValue
+                RefreshToken = refreshToken
             };
 
             return authResult;
@@ -108,17 +107,15 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
 
         public async Task<AuthenticationResult> RefreshToken(RefreshTokenRequest refreshTokenRequest)
         {
-            var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-            SecurityToken validatedAccessToken = null;
-            SecurityToken validatedRefreshToken = null;
+            var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();            
 
             ValidationParametersFactory validationFactory = new ValidationParametersFactory(jwtSettings);
 
             TokenValidationParameters accessTokenValidationParameters = validationFactory.AccessTokenValidationParameters;
             TokenValidationParameters refreshTokenValidationParameters = validationFactory.RefreshTokenValidationParameters;
 
-            validatedAccessToken = tokenGenerator.ValidateToken(refreshTokenRequest.AccessToken, accessTokenValidationParameters);
-            validatedRefreshToken = tokenGenerator.ValidateToken(refreshTokenRequest.RefreshToken, refreshTokenValidationParameters);
+            SecurityToken validatedAccessToken = tokenGenerator.ValidateToken(refreshTokenRequest.AccessToken, accessTokenValidationParameters);
+            SecurityToken validatedRefreshToken = tokenGenerator.ValidateToken(refreshTokenRequest.RefreshToken, refreshTokenValidationParameters);
 
             if (validatedAccessToken == null || validatedRefreshToken == null)
                 throw new AuthenticationException("Invalid token");
