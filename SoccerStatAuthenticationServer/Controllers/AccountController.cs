@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -26,39 +26,46 @@ namespace SoccerStatAuthenticationServer.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest registerRequest)
         {
-            if (!ModelState.IsValid)
-                return BadRequest("validation error");
-
-            User createdUser;
             try
             {
-                createdUser = await accountService.Register(registerRequest);
-            }
-            catch(UserExistsException)
-            {
-                return BadRequest(registerRequest);
-            }
+                if (!ModelState.IsValid)
+                    return BadRequest(registerRequest);
 
-            return Ok(createdUser.Id);
+                User createdUser = await accountService.Register(registerRequest);
+
+                return Ok(createdUser.Id);
+            }
+            catch(UserExistsException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }            
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest loginRequest)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(loginRequest);
-
-            AuthenticationResult result;
             try
             {
-                result = await accountService.Login(loginRequest);
-            }
-            catch(AuthenticationException)
-            {
-                return BadRequest(loginRequest);
-            }
+                if (loginRequest == null)
+                    return Unauthorized(loginRequest);
+                if (!ModelState.IsValid)
+                    return Unauthorized(loginRequest);
+                AuthenticationResult result = await accountService.Login(loginRequest);
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch(AuthenticationException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            } 
         }
 
         [HttpPost("refreshToken")]

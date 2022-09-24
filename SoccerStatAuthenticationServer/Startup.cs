@@ -23,6 +23,7 @@ using SoccerStatAuthenticationServer.Services.TokenGenerators;
 using SoccerStatAuthenticationServer.Services.PasswordHasher;
 using SoccerStatAuthenticationServer.Services.Authenticator;
 using SoccerStatAuthenticationServer.Services.ValidationParameters;
+using SoccerStatAuthenticationServer.Services.UserService;
 
 namespace SoccerStatAuthenticationServer
 {
@@ -54,6 +55,7 @@ namespace SoccerStatAuthenticationServer
             services.AddTransient<ITokenGenerator, TokenGenerator>();
             services.AddTransient<IPasswordHasher, PasswordHasher>();
             services.AddTransient<IAccountService, AccountService>();
+            services.AddTransient<IUserService, UserService>();
 
             TokenValidationParameters accessTokenValidationParameters = new ValidationParametersFactory(jwtSettings).AccessTokenValidationParameters;
 

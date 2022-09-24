@@ -103,8 +103,7 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             else
             {
                 refreshToken.Token = await tokenGenerator.GenerateToken(TokenType.RefreshToken, user);
-            }                     
-
+            } 
             AuthenticationResult authResult = new()
             {
                 AccessToken = accessToken,
@@ -118,14 +117,14 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
         {            
             SecurityToken validatedAccessToken = null;
             SecurityToken validatedRefreshToken = null;
-
+            
             ValidationParametersFactory validationFactory = new ValidationParametersFactory(jwtSettings);
 
             TokenValidationParameters accessTokenValidationParameters = validationFactory.AccessTokenValidationParameters;
             TokenValidationParameters refreshTokenValidationParameters = validationFactory.RefreshTokenValidationParameters;
 
-            validatedAccessToken = tokenGenerator.ValidateToken(refreshTokenRequest.AccessToken, accessTokenValidationParameters);
-            validatedRefreshToken = tokenGenerator.ValidateToken(refreshTokenRequest.RefreshToken, refreshTokenValidationParameters);
+            SecurityToken validatedAccessToken = tokenGenerator.ValidateToken(refreshTokenRequest.AccessToken, accessTokenValidationParameters);
+            SecurityToken validatedRefreshToken = tokenGenerator.ValidateToken(refreshTokenRequest.RefreshToken, refreshTokenValidationParameters);
 
             if (validatedAccessToken == null || validatedRefreshToken == null)
                 throw new AuthenticationException("Invalid token");
