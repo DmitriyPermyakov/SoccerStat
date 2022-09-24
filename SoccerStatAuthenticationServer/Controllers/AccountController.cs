@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -71,20 +71,35 @@ namespace SoccerStatAuthenticationServer.Controllers
         [HttpPost("refreshToken")]
         public async Task<IActionResult> RefreshToken(RefreshTokenRequest refreshTokenRequest)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(refreshTokenRequest);
+            AuthenticationResult authenticationResult = null;
+
             try
             {
-                if (refreshTokenRequest == null)
-                    return BadRequest(refreshTokenRequest);
-                if (!ModelState.IsValid)
-                    return BadRequest(refreshTokenRequest);
-
-                _ = await accountService.RefreshToken(refreshTokenRequest);
-                return Ok();
+                authenticationResult = await accountService.RefreshToken(refreshTokenRequest);
             }
-            catch(Exception ex)
+            catch(AuthenticationException ex)
             {
-                return StatusCode(500, ex.Message);
+                return BadRequest(ex.Message);
             }
+            catch(AccessTokenValidationTimeException ex)
+            {
+                return BadRequest(ex.Message);
+            }            
+            
+            return Ok(authenticationResult);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(string refreshToken)
+        {
+            if (refreshToken == null || refreshToken == String.Empty)
+                return BadRequest(refreshToken);
+
+            await accountService.Logout(refreshToken);
+
+            return Ok();
         }
         
     }

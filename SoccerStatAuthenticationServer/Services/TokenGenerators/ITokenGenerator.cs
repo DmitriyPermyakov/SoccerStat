@@ -9,7 +9,7 @@ namespace SoccerStatAuthenticationServer.Services.TokenGenerators
 {
     public interface ITokenGenerator
     {
-        public string GenerateToken(TokenType tokenType, User user);
+        public Task<string> GenerateToken(TokenType tokenType, User user);
         public SecurityToken ValidateToken(string token, TokenValidationParameters tokenValidationParameters);       
     }
 }

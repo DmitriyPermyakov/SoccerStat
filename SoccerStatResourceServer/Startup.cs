@@ -2,77 +2,69 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication;
+using SoccerStatResourceServer.AuthenticationSettings;
+using SoccerStatResourceServer.Repository;
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Text;
-using SoccerStatAuthenticationServer.Repository;
-using Microsoft.EntityFrameworkCore;
-using SoccerStatAuthenticationServer.Repository.UserRepository;
-using SoccerStatAuthenticationServer.Repository.TokenRepository;
-using SoccerStatAuthenticationServer.AuthenticationSettings;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using SoccerStatAuthenticationServer.Services.TokenGenerators;
-using SoccerStatAuthenticationServer.Services.PasswordHasher;
-using SoccerStatAuthenticationServer.Services.Authenticator;
-using SoccerStatAuthenticationServer.Services.ValidationParameters;
-using SoccerStatAuthenticationServer.Services.UserService;
+using Microsoft.OpenApi.Models;
 
-namespace SoccerStatAuthenticationServer
+
+
+namespace SoccerStatResourceServer
 {
     public class Startup
     {
-        public IConfiguration Configuration { get; }
         private readonly string localhostConnection = "localhostConnection";
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
-        
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
-
-            string connectionString = Configuration.GetConnectionString("AuthenticationDatabase");
+            services.AddControllers().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+            string connectionString = Configuration.GetConnectionString("ResourceDatabase");
+            services.AddDbContext<ResourceDbContext>(options => options.UseLazyLoadingProxies().UseSqlServer(connectionString));
 
             JwtSettings jwtSettings = new JwtSettings();
             Configuration.Bind("JwtSettings", jwtSettings);
             services.AddSingleton(jwtSettings);
 
-            services.AddDbContext<AuthenticationServerDbContext>(options => options.UseSqlServer(connectionString));
-            services.AddTransient<IUserRepository, UserRepository>();
-            services.AddTransient<ITokenRepository, TokenRepository>();
-            services.AddTransient<ITokenGenerator, TokenGenerator>();
-            services.AddTransient<IPasswordHasher, PasswordHasher>();
-            services.AddTransient<IAccountService, AccountService>();
-            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<ResourceDbContext>();
+            services.AddTransient(typeof(IRepository<>), typeof(Repository<>) );
 
-            TokenValidationParameters accessTokenValidationParameters = new ValidationParametersFactory(jwtSettings).AccessTokenValidationParameters;
+            TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RequireExpirationTime = false,
+                ValidateLifetime = false,
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.RequireHttpsMetadata = false;
-                    options.SaveToken = true;
-                    options.TokenValidationParameters = accessTokenValidationParameters;
-                });
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.RefreshTokenSecret))
+            };
+
             services.AddCors(options =>
             {
                 options.AddPolicy(name: localhostConnection, builder => builder.WithOrigins("http://localhost:4200")
                     .AllowAnyHeader()
                     .WithMethods("PUT", "POST", "GET", "DELETE"));
             });
-
+            #region
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SoccerStatAuthenticationServer", Version = "v1" });
@@ -99,7 +91,7 @@ namespace SoccerStatAuthenticationServer
                     }
                 });
             });
-
+            #endregion
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -109,14 +101,14 @@ namespace SoccerStatAuthenticationServer
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SoccerStatAuthenticationServer v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SoccerStatResourceServer v1"));
             }
 
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
-            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseAuthorization();
             app.UseCors(localhostConnection);
 
