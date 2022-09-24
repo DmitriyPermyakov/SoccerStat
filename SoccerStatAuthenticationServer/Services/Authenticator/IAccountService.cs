@@ -13,5 +13,6 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
         public Task<User> Register(RegisterRequest registerRequest);
         public Task<AuthenticationResult> Login(LoginRequest loginRequest);
         public Task<AuthenticationResult> RefreshToken(RefreshTokenRequest refreshTokenRequest);
+        public Task Logout(string refreshToken);
     }
 }

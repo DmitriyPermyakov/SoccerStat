@@ -5,15 +5,13 @@ namespace SoccerStatResourceServer.DTO.Requests
 {
     public class TeamRequest
     {
+
+        [Required]
+        public Guid Id { get; set; }        
+        public string ImageUrl { get; set; }
         [Required]
         public string Name { get; set; }
         [Required]
         public Guid LeagueId { get; set; } 
-    }
-
-    public class UpdateTeamRequest : TeamRequest
-    {
-        [Required]
-        public Guid TeamId { get; set; }
     }
 }

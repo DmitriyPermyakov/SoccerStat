@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SoccerStatResourceServer.DTO.Requests;
+using SoccerStatResourceServer.DTO.Responses;
 using SoccerStatResourceServer.Models;
 using SoccerStatResourceServer.Repository;
 using System;
@@ -28,9 +29,21 @@ namespace SoccerStatResourceServer.Controllers
             try
             {
                 List<Team> teams = await teamRepository.GetAllAsync();
-                return Ok(teams);
+                List<TeamResponse> teamResponse = new List<TeamResponse>();
+                foreach(Team t in teams)
+                {
+                    var teamResp = new TeamResponse()
+                    {
+                        Id = t.Id.ToString(),
+                        Name = t.Name,
+                        ImageUrl = t.ImageUrl,
+                        LeagueId = t.LeagueId.ToString()
+                    };
+                    teamResponse.Add(teamResp);
+                }
+                return Ok(teamResponse);
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 return StatusCode(500, "Internal server error");
             }
@@ -48,9 +61,18 @@ namespace SoccerStatResourceServer.Controllers
                 if (team == null)
                     return NotFound();
                 else
-                    return Ok(team);                
+                {
+                    TeamResponse teamResp = new TeamResponse()
+                    {
+                        Id = team.Id.ToString(),
+                        ImageUrl = team.ImageUrl,
+                        Name = team.Name,
+                        LeagueId = team.LeagueId
+                    };
+                    return Ok(teamResp);                
+                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Internal server error");
             }
@@ -73,6 +95,7 @@ namespace SoccerStatResourceServer.Controllers
                 Team newTeam = new Team()
                 {
                     Id = Guid.NewGuid().ToString(),
+                    ImageUrl = teamRequest.ImageUrl,
                     Name = teamRequest.Name,                    
                     LeagueId = league.Id
                 };
@@ -106,25 +129,25 @@ namespace SoccerStatResourceServer.Controllers
                     return NoContent();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Internal server error");
             }
         }
 
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateAsync([FromBody] UpdateTeamRequest updateTeamRequest)
+        public async Task<IActionResult> UpdateAsync([FromBody] TeamRequest updateTeamRequest)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(updateTeamRequest);
-                if (updateTeamRequest.TeamId == Guid.Empty)
+                if (updateTeamRequest.Id == Guid.Empty)
                     return BadRequest("TeamId is empty");
                 if(updateTeamRequest.LeagueId == Guid.Empty)
-                    return BadRequest();
+                    return BadRequest(updateTeamRequest);
 
-                Team team = await teamRepository.GetByIdAsync(updateTeamRequest.TeamId.ToString());
+                Team team = await teamRepository.GetByIdAsync(updateTeamRequest.Id.ToString());
                 if (team == null)
                     return NotFound("Team not found");
 
@@ -133,7 +156,9 @@ namespace SoccerStatResourceServer.Controllers
                     return NotFound("League not found");
 
                 team.Name = updateTeamRequest.Name;
+                team.ImageUrl = updateTeamRequest.ImageUrl;
                 team.LeagueId = updateTeamRequest.LeagueId.ToString();
+                
 
                 teamRepository.Update(team);
                 await teamRepository.SaveAsync();

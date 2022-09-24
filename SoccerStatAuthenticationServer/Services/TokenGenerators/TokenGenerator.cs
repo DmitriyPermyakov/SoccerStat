@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using SoccerStatAuthenticationServer.Repository.TokenRepository;
 
 namespace SoccerStatAuthenticationServer.Services.TokenGenerators
 {
@@ -19,13 +20,15 @@ namespace SoccerStatAuthenticationServer.Services.TokenGenerators
     public class TokenGenerator : ITokenGenerator
     {
         private readonly JwtSettings jwtSettings;
+        private readonly ITokenRepository tokenRepository;
 
-        public TokenGenerator(JwtSettings jwtSettings)
+        public TokenGenerator(JwtSettings jwtSettings, ITokenRepository repo)
         {
             this.jwtSettings = jwtSettings;
+            this.tokenRepository = repo;
         }
-
-        public string GenerateToken(TokenType tokenType, User user)
+        
+        public async Task<string> GenerateToken(TokenType tokenType, User user)
         {
             string tokenSecret = null;
             double expirationTime = 0;
@@ -65,6 +68,17 @@ namespace SoccerStatAuthenticationServer.Services.TokenGenerators
                 signingCredentials);
 
             var createdToken = new JwtSecurityTokenHandler().WriteToken(token);
+            
+            if (tokenType == TokenType.RefreshToken)
+            {
+                RefreshToken refreshToken = new RefreshToken
+                {
+                    Id = Guid.NewGuid(),
+                    Token = createdToken,
+                    UserId = user.Id
+                };
+                await tokenRepository.CreateAsync(refreshToken);
+            }
             return createdToken;
         }
 

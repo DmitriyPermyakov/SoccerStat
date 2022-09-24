@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SoccerStatResourceServer.DTO.Requests;
+using SoccerStatResourceServer.DTO.Responses;
 using SoccerStatResourceServer.Models;
 using SoccerStatResourceServer.Repository;
 using System;
@@ -24,9 +25,20 @@ namespace SoccerStatResourceServer.Controllers
             try
             {
                 List<League> leagues = await repository.GetAllAsync();
-                return Ok(leagues);
+                List<LeagueResponse> leagueResponse = new List<LeagueResponse>();
+                foreach(League l in leagues)
+                {
+                    var leagueResp = new LeagueResponse();
+                    leagueResp.Id = l.Id;
+                    leagueResp.Name = l.Name;
+                    leagueResp.ImageUrl = l.ImageUrl;
+                    leagueResp.Country = l.Country;
+
+                    leagueResponse.Add(leagueResp);
+                }
+                return Ok(leagueResponse);
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 return StatusCode(500, "Internal server error");
             }
@@ -54,17 +66,19 @@ namespace SoccerStatResourceServer.Controllers
             }
         }
         [HttpPost("create")]
-        public async Task<IActionResult> CreateAsync(string name)
+        public async Task<IActionResult> CreateAsync([FromBody] LeagueRequest leagueRequest)
         {
             try
             {
-                if(name == null)
-                    return BadRequest();
+                if(leagueRequest.Name == null)
+                    return BadRequest();                
 
                 League newLeague = new League()
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Name = name
+                    ImageUrl = leagueRequest.ImageUrl.ToString(),
+                    Name = leagueRequest.Name,
+                    Country = leagueRequest.Country
                 };
                 await repository.CreateAsync(newLeague);
                                   
@@ -77,7 +91,7 @@ namespace SoccerStatResourceServer.Controllers
             }
         }
 
-        [HttpDelete("remove")]
+        [HttpDelete("remove/{id:Guid}")]
         public async Task<IActionResult> DeleteAsync(Guid id)
         {
            try
@@ -120,7 +134,7 @@ namespace SoccerStatResourceServer.Controllers
                 await repository.SaveAsync();
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Internal server error");
             }

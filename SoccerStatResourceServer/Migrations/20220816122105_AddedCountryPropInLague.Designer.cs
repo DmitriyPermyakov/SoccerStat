@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoccerStatResourceServer.Repository;
 
 namespace SoccerStatResourceServer.Migrations
 {
     [DbContext(typeof(ResourceDbContext))]
-    partial class ResourceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220816122105_AddedCountryPropInLague")]
+    partial class AddedCountryPropInLague
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -110,9 +112,6 @@ namespace SoccerStatResourceServer.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LeagueId")
                         .HasColumnType("nvarchar(450)");

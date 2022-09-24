@@ -12,5 +12,6 @@ namespace SoccerStatAuthenticationServer.Repository.TokenRepository
         public Task<RefreshToken> GetByIdAsync(int id);
         public Task<RefreshToken> GetByTokenAsync(string refreshToken);
         public Task<RefreshToken> GetByUserIdAsync(Guid userId);
+        public Task RemoveToken(RefreshToken refreshToken);
     }
 }

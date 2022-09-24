@@ -66,7 +66,7 @@ namespace SoccerStatAuthenticationServer
                 });
             services.AddCors(options =>
             {
-                options.AddPolicy(name: localhostConnection, builder => builder.WithOrigins("http://localhost:3000")
+                options.AddPolicy(name: localhostConnection, builder => builder.WithOrigins("http://localhost:4200")
                     .AllowAnyHeader()
                     .WithMethods("PUT", "POST", "GET", "DELETE"));
             });

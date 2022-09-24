@@ -27,7 +27,7 @@ namespace SoccerStatAuthenticationServer.Controllers
         public async Task<IActionResult> Register(RegisterRequest registerRequest)
         {
             if (!ModelState.IsValid)
-                return BadRequest(registerRequest);
+                return BadRequest("validation error");
 
             User createdUser;
             try
@@ -66,11 +66,32 @@ namespace SoccerStatAuthenticationServer.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(refreshTokenRequest);
+            AuthenticationResult authenticationResult = null;
 
-            _ = await accountService.RefreshToken(refreshTokenRequest);
+            try
+            {
+                authenticationResult = await accountService.RefreshToken(refreshTokenRequest);
+            }
+            catch(AuthenticationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch(AccessTokenValidationTimeException ex)
+            {
+                return BadRequest(ex.Message);
+            }            
+            
+            return Ok(authenticationResult);
+        }
 
-            
-            
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(string refreshToken)
+        {
+            if (refreshToken == null || refreshToken == String.Empty)
+                return BadRequest(refreshToken);
+
+            await accountService.Logout(refreshToken);
+
             return Ok();
         }
         

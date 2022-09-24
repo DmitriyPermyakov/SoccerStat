@@ -39,5 +39,11 @@ namespace SoccerStatAuthenticationServer.Repository.TokenRepository
             RefreshToken token = await context.RefreshTokens.Where(t => t.UserId == userId).FirstOrDefaultAsync();
             return token;
         }
+
+        public async Task RemoveToken(RefreshToken refreshToken)
+        {
+            context.RefreshTokens.Remove(refreshToken);
+            await context.SaveChangesAsync();
+        }
     }
 }

@@ -5,6 +5,7 @@ namespace SoccerStatResourceServer.Models
     public class Team
     {
         public string Id { get; set; }
+        public string ImageUrl { get; set; }
         public string Name { get; set; }  
         public string LeagueId { get; set; }
         public virtual League League { get; set; }
