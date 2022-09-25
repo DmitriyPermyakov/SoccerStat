@@ -102,9 +102,10 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
             }
             else
             {
-                refreshToken.Token = await tokenGenerator.GenerateToken(TokenType.RefreshToken, user);
+                refreshToken = new RefreshToken();
+                refreshToken.Token = await tokenGenerator.GenerateToken(TokenType.RefreshToken, user);                
             } 
-            AuthenticationResult authResult = new()
+            AuthenticationResult authResult = new AuthenticationResult()
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken.Token
@@ -114,10 +115,7 @@ namespace SoccerStatAuthenticationServer.Services.Authenticator
         }
 
         public async Task<AuthenticationResult> RefreshToken(RefreshTokenRequest refreshTokenRequest)
-        {            
-            SecurityToken validatedAccessToken = null;
-            SecurityToken validatedRefreshToken = null;
-            
+        {   
             ValidationParametersFactory validationFactory = new ValidationParametersFactory(jwtSettings);
 
             TokenValidationParameters accessTokenValidationParameters = validationFactory.AccessTokenValidationParameters;
