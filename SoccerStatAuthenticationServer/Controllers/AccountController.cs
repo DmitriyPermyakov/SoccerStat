@@ -94,12 +94,22 @@ namespace SoccerStatAuthenticationServer.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(string refreshToken)
         {
-            if (refreshToken == null || refreshToken == String.Empty)
-                return BadRequest(refreshToken);
+            try
+            {
+                if (string.IsNullOrEmpty(refreshToken))
+                    return BadRequest(refreshToken);
 
-            await accountService.Logout(refreshToken);
-
-            return Ok();
+               await accountService.Logout(refreshToken);
+                return Ok();
+            }
+            catch(AuthenticationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error");
+            }            
         }
         
     }

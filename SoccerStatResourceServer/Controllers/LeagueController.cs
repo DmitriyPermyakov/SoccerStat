@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SoccerStatResourceServer.DTO.Requests;
 using SoccerStatResourceServer.DTO.Responses;
 using SoccerStatResourceServer.Models;
@@ -15,6 +14,7 @@ namespace SoccerStatResourceServer.Controllers
     public class LeagueController : ControllerBase
     {
         private IRepository<League> repository;
+        
         public LeagueController(IRepository<League> repository)
         {
             this.repository = repository;
@@ -26,6 +26,8 @@ namespace SoccerStatResourceServer.Controllers
             {
                 List<League> leagues = await repository.GetAllAsync();
                 List<LeagueResponse> leagueResponse = new List<LeagueResponse>();
+                if(leagues == null)
+                    return NotFound();
                 foreach(League l in leagues)
                 {
                     var leagueResp = new LeagueResponse();
@@ -54,23 +56,21 @@ namespace SoccerStatResourceServer.Controllers
 
                 League league = await repository.GetByIdAsync(id.ToString());
                 if (league == null)
-                    return NotFound();
-                else
-                {                    
-                    return Ok(league);
-                }
+                    return NotFound();                              
+                return Ok(league);               
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
             }
         }
-        [HttpPost("create")]
+
+        [HttpPost("create"), DisableRequestSizeLimit]
         public async Task<IActionResult> CreateAsync([FromBody] LeagueRequest leagueRequest)
         {
             try
             {
-                if(leagueRequest.Name == null)
+                if(!ModelState.IsValid)
                     return BadRequest();                
 
                 League newLeague = new League()
@@ -79,7 +79,8 @@ namespace SoccerStatResourceServer.Controllers
                     ImageUrl = leagueRequest.ImageUrl.ToString(),
                     Name = leagueRequest.Name,
                     Country = leagueRequest.Country
-                };
+                };                
+                
                 await repository.CreateAsync(newLeague);
                                   
                 await repository.SaveAsync();
@@ -102,14 +103,12 @@ namespace SoccerStatResourceServer.Controllers
                 League league = await repository.GetByIdAsync(id.ToString());
                 if (league == null)
                     return NotFound();
-                else
-                {
-                    repository.Delete(league);
-                    await repository.SaveAsync();
-                    return NoContent();
-                }    
+
+                repository.Delete(league);
+                await repository.SaveAsync();
+                return NoContent();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, "Internal server error");
             }
@@ -129,6 +128,8 @@ namespace SoccerStatResourceServer.Controllers
                     return NotFound("League not found");
 
                 league.Name = request.Name;
+                league.ImageUrl = request.ImageUrl;
+                league.Country = request.Country;
 
                 repository.Update(league);
                 await repository.SaveAsync();

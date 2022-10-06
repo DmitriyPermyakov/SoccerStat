@@ -17,8 +17,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
-
-
+using SoccerStatResourceServer.Services;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http;
 
 namespace SoccerStatResourceServer
 {
@@ -46,6 +49,7 @@ namespace SoccerStatResourceServer
 
             services.AddTransient<ResourceDbContext>();
             services.AddTransient(typeof(IRepository<>), typeof(Repository<>) );
+            services.AddTransient<IUploadImage, UploadImageService>();
 
             TokenValidationParameters tokenValidationParameters = new TokenValidationParameters()
             {
@@ -64,6 +68,13 @@ namespace SoccerStatResourceServer
                     .AllowAnyHeader()
                     .WithMethods("PUT", "POST", "GET", "DELETE"));
             });
+
+            //services.Configure<FormOptions>(o =>
+            //{
+            //    o.ValueLengthLimit = int.MaxValue;
+            //    o.MultipartBodyLengthLimit = int.MaxValue;
+            //    o.MemoryBufferThreshold = int.MaxValue;
+            //});
             #region
             services.AddSwaggerGen(c =>
             {
@@ -107,10 +118,21 @@ namespace SoccerStatResourceServer
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseStaticFiles();
 
+            string uploadsDir = Path.Combine(env.WebRootPath, "uploads");
+            if(!Directory.Exists(uploadsDir))
+                Directory.CreateDirectory(uploadsDir);
+
+            app.UseStaticFiles(new StaticFileOptions()
+            {
+                RequestPath = "/images",
+                FileProvider = new PhysicalFileProvider(uploadsDir)
+            });
             app.UseAuthorization();
             app.UseAuthorization();
             app.UseCors(localhostConnection);
+            
 
             app.UseEndpoints(endpoints =>
             {
