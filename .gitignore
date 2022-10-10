@@ -472,3 +472,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+wwwroot/
