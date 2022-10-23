@@ -4,6 +4,8 @@ namespace SoccerStatResourceServer.Models
     public class Match
     {
         public string Id { get; set; }
+        public string LeagueId { get; set; }
+        public virtual League League { get; set; }
         public string HomeTeamId { get; set; }
         public virtual Team HomeTeam { get; set; }
         public string AwayTeamId { get; set; }

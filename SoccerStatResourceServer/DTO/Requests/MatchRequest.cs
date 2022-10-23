@@ -7,9 +7,13 @@ namespace SoccerStatResourceServer.DTO.Requests
     public class MatchRequest
     {
         [Required]
+        public Guid Id { get; set; }
+        [Required]
         public Guid HomeTeamId { get; set; }
         [Required]
         public Guid AwayTeamId { get; set; }
+        [Required]
+        public Guid LeagueId { get; set; }
         [Required]
         [DataType(DataType.Date)]
         public DateTime Date { get; set; }
@@ -28,11 +32,5 @@ namespace SoccerStatResourceServer.DTO.Requests
         [Required]
         public int AwayTeamPenalties { get; set; }
 
-    }
-
-    public class UpdateMatchRequest : MatchRequest
-    {
-        [Required]
-        public Guid Id { get; set; }
     }
 }
